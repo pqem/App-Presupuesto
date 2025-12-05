@@ -1,11 +1,13 @@
 "use client";
 
 import { useStorage } from "@/context/StorageContext";
+import { useUi } from "@/context/UiContext";
 import SummaryCard from "@/components/SummaryCard";
 import { formatCurrency } from "@/utils/format";
 
 export default function Dashboard() {
   const { transactions, accounts, getAccountBalance } = useStorage();
+  const { openTransactionModal } = useUi();
 
   // Calculate totals
   const totalBalance = accounts.reduce((acc, account) => acc + getAccountBalance(account.id), 0);
@@ -100,6 +102,32 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      {/* Desktop FAB or Shortcut */}
+      <button
+        onClick={openTransactionModal}
+        className="desktop-only"
+        style={{
+          position: 'fixed',
+          bottom: '40px',
+          right: '40px',
+          padding: '1rem 2rem',
+          borderRadius: 'var(--radius-full)',
+          background: 'var(--accent-primary)',
+          color: 'white',
+          border: 'none',
+          boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)',
+          fontSize: '1rem',
+          fontWeight: 600,
+          cursor: 'pointer',
+          zIndex: 90,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}
+      >
+        <span style={{ fontSize: '1.5rem' }}>+</span>
+        Nueva Transacción
+      </button>
     </div>
   );
 }
