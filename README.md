@@ -3,6 +3,8 @@
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
 ![Firebase](https://img.shields.io/badge/Firebase-12-orange?style=flat-square&logo=firebase)
+![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=flat-square&logo=vercel)
+![Status](https://img.shields.io/badge/Status-Live-success?style=flat-square)
 
 Una aplicación moderna y elegante para gestionar tus finanzas personales. Controla tus ingresos, gastos, cuentas bancarias y tarjetas de crédito desde un solo lugar.
 
@@ -20,7 +22,9 @@ Una aplicación moderna y elegante para gestionar tus finanzas personales. Contr
 
 ## 🚀 Demo en Vivo
 
-Visita la aplicación: [https://pqem.github.io/App-Presupuesto/](https://pqem.github.io/App-Presupuesto/)
+✨ **Aplicación desplegada:** [https://app-presupuesto-2kqj1pknw-pqems-projects.vercel.app](https://app-presupuesto-2kqj1pknw-pqems-projects.vercel.app)
+
+¡Prueba la aplicación en vivo! Crea tu cuenta y empieza a gestionar tus finanzas.
 
 ## 📸 Capturas de Pantalla
 
