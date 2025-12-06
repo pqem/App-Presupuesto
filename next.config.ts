@@ -1,10 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export",
-  basePath: "/App-Presupuesto",
+  // Configuración para Vercel (soporta SSR y todas las features de Next.js)
+  reactStrictMode: true,
+  
+  // Optimizaciones de imágenes habilitadas (Vercel lo soporta)
   images: {
-    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'www.gstatic.com',
+      },
+    ],
   },
 };
 
