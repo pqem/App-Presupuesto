@@ -5,7 +5,6 @@ import {
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
     GoogleAuthProvider, 
-    signInWithPopup,
     signInWithRedirect,
     getRedirectResult 
 } from 'firebase/auth';
@@ -18,51 +17,46 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Detectar si es móvil
-    const isMobile = () => {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    };
-
-    // Manejar resultado de redirect (para móviles)
+    // Manejar resultado de redirect cuando vuelve de Google
     useEffect(() => {
         const handleRedirectResult = async () => {
             try {
                 const result = await getRedirectResult(auth);
                 if (result) {
-                    // Usuario inició sesión con éxito
-                    console.log('Login exitoso con Google');
+                    console.log('✅ Login exitoso con Google');
                 }
             } catch (err: any) {
-                console.error('Error en redirect:', err);
-                setError('Error al iniciar sesión con Google: ' + err.message);
+                console.error('❌ Error en redirect:', err);
+                setError('Error: ' + (err.message || 'No se pudo iniciar sesión con Google'));
             }
         };
         handleRedirectResult();
     }, []);
 
     const handleGoogleLogin = async () => {
+        console.log('🚀 Iniciando Google Sign-In...');
         setError('');
         setLoading(true);
+        
         const provider = new GoogleAuthProvider();
         
         try {
-            if (isMobile()) {
-                // En móviles usa redirect (más confiable)
-                await signInWithRedirect(auth, provider);
-            } else {
-                // En escritorio usa popup
-                await signInWithPopup(auth, provider);
-            }
+            console.log('📱 Redirigiendo a Google...');
+            await signInWithRedirect(auth, provider);
+            // La página se recargará automáticamente después del redirect
         } catch (err: any) {
-            console.error(err);
-            if (err.code === 'auth/operation-not-allowed') {
-                setError('Google Sign-In no está habilitado. Ve a Firebase Console → Authentication → Sign-in method → Google');
-            } else if (err.code === 'auth/unauthorized-domain') {
-                setError('Este dominio no está autorizado. Agrega tu dominio en Firebase Console → Authentication → Settings → Authorized domains');
-            } else {
-                setError('Error al iniciar sesión con Google: ' + err.message);
-            }
+            console.error('❌ Error:', err);
             setLoading(false);
+            
+            if (err.code === 'auth/operation-not-allowed') {
+                setError('⚠️ Google Sign-In no está habilitado en Firebase Console');
+            } else if (err.code === 'auth/unauthorized-domain') {
+                setError('⚠️ Este dominio no está autorizado en Firebase');
+            } else if (err.code === 'auth/popup-blocked') {
+                setError('⚠️ El navegador bloqueó el popup. Intenta de nuevo');
+            } else {
+                setError('❌ Error: ' + err.message);
+            }
         }
     };
 
@@ -80,15 +74,15 @@ export default function LoginPage() {
         } catch (err: any) {
             console.error(err);
             if (err.code === 'auth/invalid-credential') {
-                setError('Credenciales incorrectas.');
+                setError('❌ Email o contraseña incorrectos');
             } else if (err.code === 'auth/email-already-in-use') {
-                setError('Este email ya está registrado.');
+                setError('⚠️ Este email ya está registrado');
             } else if (err.code === 'auth/weak-password') {
-                setError('La contraseña debe tener al menos 6 caracteres.');
-            } else if (err.code === 'auth/operation-not-allowed') {
-                setError('El inicio de sesión con email y contraseña no está habilitado en Firebase.');
+                setError('⚠️ La contraseña debe tener al menos 6 caracteres');
+            } else if (err.code === 'auth/invalid-email') {
+                setError('⚠️ Email inválido');
             } else {
-                setError('Error: ' + err.message);
+                setError('❌ Error: ' + err.message);
             }
             setLoading(false);
         }
@@ -101,36 +95,35 @@ export default function LoginPage() {
             alignItems: 'center',
             justifyContent: 'center',
             minHeight: '100vh',
-            padding: '1rem'
+            padding: '1rem',
+            background: 'var(--bg-primary)'
         }}>
             <div className="glass-card" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}>
-                <h1 style={{
-                    fontSize: '2rem',
-                    fontWeight: 700,
-                    textAlign: 'center',
-                    marginBottom: '2rem',
-                    background: 'linear-gradient(to right, var(--accent-primary), var(--accent-secondary))',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
-                }}>
-                    💰 Presupuesto
-                </h1>
+                {/* Logo/Título */}
+                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                    <h1 style={{
+                        fontSize: '2.5rem',
+                        fontWeight: 700,
+                        marginBottom: '0.5rem',
+                        background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                    }}>
+                        💰 Presupuesto
+                    </h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                        {isLogin ? 'Inicia sesión para continuar' : 'Crea tu cuenta gratis'}
+                    </p>
+                </div>
 
-                <p style={{ 
-                    textAlign: 'center', 
-                    color: 'var(--text-secondary)', 
-                    marginBottom: '2rem',
-                    fontSize: '0.875rem'
-                }}>
-                    {isLogin ? 'Inicia sesión para continuar' : 'Crea tu cuenta gratis'}
-                </p>
-
+                {/* Botón de Google */}
                 <button
+                    type="button"
                     onClick={handleGoogleLogin}
                     disabled={loading}
                     style={{
                         width: '100%',
-                        padding: '0.75rem',
+                        padding: '1rem',
                         background: 'white',
                         color: '#333',
                         border: '1px solid #ddd',
@@ -141,30 +134,40 @@ export default function LoginPage() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '0.5rem',
-                        transition: 'all 0.2s'
+                        gap: '0.75rem',
+                        fontSize: '1rem',
+                        transition: 'all 0.2s',
+                        opacity: loading ? 0.7 : 1
                     }}
-                    onMouseEnter={(e) => !loading && (e.currentTarget.style.background = '#f8f8f8')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}
                 >
-                    <svg width="18" height="18" viewBox="0 0 18 18">
-                        <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/>
-                        <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/>
-                        <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/>
-                        <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/>
+                    <svg width="20" height="20" viewBox="0 0 20 20">
+                        <path fill="#4285F4" d="M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z"/>
+                        <path fill="#34A853" d="M13.46 15.13c-.83.59-1.96 1-3.46 1-2.64 0-4.88-1.74-5.68-4.15H1.07v2.52C2.72 17.75 6.09 20 10 20c2.7 0 4.96-.89 6.62-2.42l-3.16-2.45z"/>
+                        <path fill="#FBBC05" d="M3.99 10c0-.69.12-1.35.32-1.97V5.51H1.07A9.973 9.973 0 000 10c0 1.61.39 3.14 1.07 4.49l3.24-2.52c-.2-.62-.32-1.28-.32-1.97z"/>
+                        <path fill="#EA4335" d="M10 3.88c1.88 0 3.13.81 3.85 1.48l2.84-2.76C14.96.99 12.7 0 10 0 6.09 0 2.72 2.25 1.07 5.51l3.24 2.52C5.12 5.62 7.36 3.88 10 3.88z"/>
                     </svg>
-                    {loading ? 'Procesando...' : 'Continuar con Google'}
+                    {loading ? 'Redirigiendo...' : 'Continuar con Google'}
                 </button>
 
+                {/* Separador */}
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <div style={{ flex: 1, height: '1px', background: 'var(--border-medium)' }}></div>
-                    <span style={{ padding: '0 0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>O</span>
+                    <span style={{ padding: '0 1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                        o usa tu email
+                    </span>
                     <div style={{ flex: 1, height: '1px', background: 'var(--border-medium)' }}></div>
                 </div>
 
+                {/* Formulario Email/Password */}
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>
+                        <label style={{ 
+                            display: 'block', 
+                            marginBottom: '0.5rem', 
+                            color: 'var(--text-secondary)', 
+                            fontSize: '0.875rem',
+                            fontWeight: 500 
+                        }}>
                             📧 Email
                         </label>
                         <input
@@ -173,19 +176,27 @@ export default function LoginPage() {
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="tu@email.com"
                             required
+                            disabled={loading}
                             style={{
                                 width: '100%',
                                 padding: '1rem',
                                 background: 'var(--bg-tertiary)',
                                 border: '1px solid var(--border-medium)',
                                 borderRadius: 'var(--radius-md)',
-                                color: 'white'
+                                color: 'white',
+                                fontSize: '1rem'
                             }}
                         />
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>
+                        <label style={{ 
+                            display: 'block', 
+                            marginBottom: '0.5rem', 
+                            color: 'var(--text-secondary)', 
+                            fontSize: '0.875rem',
+                            fontWeight: 500 
+                        }}>
                             🔒 Contraseña
                         </label>
                         <input
@@ -194,31 +205,35 @@ export default function LoginPage() {
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Mínimo 6 caracteres"
                             required
+                            disabled={loading}
                             style={{
                                 width: '100%',
                                 padding: '1rem',
                                 background: 'var(--bg-tertiary)',
                                 border: '1px solid var(--border-medium)',
                                 borderRadius: 'var(--radius-md)',
-                                color: 'white'
+                                color: 'white',
+                                fontSize: '1rem'
                             }}
                         />
                     </div>
 
+                    {/* Mensaje de error */}
                     {error && (
                         <div style={{ 
                             padding: '1rem', 
                             background: 'rgba(239, 68, 68, 0.1)',
-                            border: '1px solid var(--accent-danger)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
                             borderRadius: 'var(--radius-md)',
                             color: 'var(--accent-danger)', 
                             fontSize: '0.875rem',
                             lineHeight: 1.5
                         }}>
-                            ⚠️ {error}
+                            {error}
                         </div>
                     )}
 
+                    {/* Botón de submit */}
                     <button
                         type="submit"
                         disabled={loading}
@@ -230,6 +245,7 @@ export default function LoginPage() {
                             borderRadius: 'var(--radius-md)',
                             fontWeight: 600,
                             cursor: loading ? 'wait' : 'pointer',
+                            fontSize: '1rem',
                             marginTop: '0.5rem',
                             opacity: loading ? 0.7 : 1,
                             transition: 'all 0.2s'
@@ -239,18 +255,26 @@ export default function LoginPage() {
                     </button>
                 </form>
 
-                <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                {/* Toggle Login/Registro */}
+                <p style={{ 
+                    textAlign: 'center', 
+                    marginTop: '1.5rem', 
+                    color: 'var(--text-secondary)', 
+                    fontSize: '0.875rem' 
+                }}>
                     {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
                     <button
+                        type="button"
                         onClick={() => {
                             setIsLogin(!isLogin);
                             setError('');
                         }}
+                        disabled={loading}
                         style={{
                             background: 'none',
                             border: 'none',
                             color: 'var(--accent-primary)',
-                            cursor: 'pointer',
+                            cursor: loading ? 'wait' : 'pointer',
                             marginLeft: '0.5rem',
                             fontWeight: 600,
                             textDecoration: 'underline'
@@ -260,6 +284,17 @@ export default function LoginPage() {
                     </button>
                 </p>
             </div>
+
+            {/* Nota de desarrollo (puedes quitarla después) */}
+            <p style={{ 
+                marginTop: '2rem', 
+                color: 'var(--text-muted)', 
+                fontSize: '0.75rem',
+                textAlign: 'center',
+                maxWidth: '400px'
+            }}>
+                💡 Si "Continuar con Google" no funciona, usa Email y Contraseña
+            </p>
         </div>
     );
 }
