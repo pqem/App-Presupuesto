@@ -1,11 +1,17 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStorage } from '@/context/StorageContext';
-import { TransactionType } from '@/types';
+import { Transaction, TransactionType } from '@/types';
 
-export default function TransactionForm({ onClose }: { onClose?: () => void }) {
-    const { addTransaction, categories, accounts } = useStorage();
+interface TransactionFormProps {
+    onClose?: () => void;
+    editingTransaction?: Transaction | null;
+    onCancelEdit?: () => void;
+}
+
+export default function TransactionForm({ onClose, editingTransaction, onCancelEdit }: TransactionFormProps) {
+    const { addTransaction, updateTransaction, categories, accounts } = useStorage();
 
     const [type, setType] = useState<TransactionType>('expense');
     const [amount, setAmount] = useState('');
@@ -14,31 +20,85 @@ export default function TransactionForm({ onClose }: { onClose?: () => void }) {
     const [accountId, setAccountId] = useState(accounts[0]?.id || '');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    // Cargar datos de la transacción en edición
+    useEffect(() => {
+        if (editingTransaction) {
+            setType(editingTransaction.type);
+            setAmount(editingTransaction.amount.toString());
+            setDescription(editingTransaction.description);
+            setCategoryId(editingTransaction.categoryId || '');
+            setAccountId(editingTransaction.accountId);
+            setDate(new Date(editingTransaction.date).toISOString().split('T')[0]);
+        }
+    }, [editingTransaction]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!amount || !description || !accountId) return;
 
-        addTransaction({
+        const transactionData = {
             amount: parseFloat(amount),
             description,
             type,
             categoryId: type === 'transfer' ? undefined : categoryId,
             accountId,
             date: new Date(date).toISOString(),
-        });
+        };
+
+        if (editingTransaction) {
+            // Actualizar transacción existente
+            await updateTransaction(editingTransaction.id, transactionData);
+            if (onCancelEdit) onCancelEdit();
+        } else {
+            // Crear nueva transacción
+            await addTransaction(transactionData);
+        }
 
         // Reset form
+        resetForm();
+        if (onClose) onClose();
+    };
+
+    const resetForm = () => {
         setAmount('');
         setDescription('');
-        if (onClose) onClose();
+        setCategoryId('');
+        setType('expense');
+        setDate(new Date().toISOString().split('T')[0]);
+    };
+
+    const handleCancel = () => {
+        resetForm();
+        if (onCancelEdit) onCancelEdit();
     };
 
     const filteredCategories = categories.filter(c => c.type === type);
 
     return (
-        <form onSubmit={handleSubmit} className="glass-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Nueva Transacción</h2>
+        <form onSubmit={handleSubmit} className="glass-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'sticky', top: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>
+                    {editingTransaction ? '✏️ Editar Transacción' : '➕ Nueva Transacción'}
+                </h2>
+                {editingTransaction && (
+                    <button
+                        type="button"
+                        onClick={handleCancel}
+                        style={{
+                            padding: '0.5rem 1rem',
+                            background: 'var(--accent-danger)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 'var(--radius-md)',
+                            cursor: 'pointer',
+                            fontSize: '0.875rem'
+                        }}
+                    >
+                        ❌ Cancelar
+                    </button>
+                )}
+            </div>
 
             <div style={{ display: 'flex', gap: '1rem' }}>
                 {(['expense', 'income', 'transfer'] as TransactionType[]).map((t) => (
@@ -54,16 +114,19 @@ export default function TransactionForm({ onClose }: { onClose?: () => void }) {
                             background: type === t ? 'var(--accent-primary)' : 'transparent',
                             color: type === t ? 'white' : 'var(--text-secondary)',
                             cursor: 'pointer',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            fontWeight: type === t ? 600 : 400
                         }}
                     >
-                        {t === 'expense' ? 'Gasto' : t === 'income' ? 'Ingreso' : 'Transferencia'}
+                        {t === 'expense' ? '💸 Gasto' : t === 'income' ? '💰 Ingreso' : '🔄 Transferencia'}
                     </button>
                 ))}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Monto</label>
+                <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                    💵 Monto
+                </label>
                 <input
                     type="number"
                     value={amount}
@@ -77,18 +140,21 @@ export default function TransactionForm({ onClose }: { onClose?: () => void }) {
                         border: '1px solid var(--border-medium)',
                         borderRadius: 'var(--radius-md)',
                         color: 'white',
-                        fontSize: '1.25rem'
+                        fontSize: '1.25rem',
+                        fontWeight: 600
                     }}
                 />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Descripción</label>
+                <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                    📝 Descripción
+                </label>
                 <input
                     type="text"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Ej: Supermercado"
+                    placeholder="Ej: Supermercado, Salario..."
                     required
                     style={{
                         padding: '1rem',
@@ -100,12 +166,15 @@ export default function TransactionForm({ onClose }: { onClose?: () => void }) {
                 />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: type !== 'transfer' ? '1fr 1fr' : '1fr', gap: '1rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Cuenta</label>
+                    <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                        🏦 Cuenta
+                    </label>
                     <select
                         value={accountId}
                         onChange={(e) => setAccountId(e.target.value)}
+                        required
                         style={{
                             padding: '1rem',
                             background: 'var(--bg-tertiary)',
@@ -122,7 +191,9 @@ export default function TransactionForm({ onClose }: { onClose?: () => void }) {
 
                 {type !== 'transfer' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Categoría</label>
+                        <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                            🏷️ Categoría
+                        </label>
                         <select
                             value={categoryId}
                             onChange={(e) => setCategoryId(e.target.value)}
@@ -145,7 +216,9 @@ export default function TransactionForm({ onClose }: { onClose?: () => void }) {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Fecha</label>
+                <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                    📅 Fecha
+                </label>
                 <input
                     type="date"
                     value={date}
@@ -171,10 +244,14 @@ export default function TransactionForm({ onClose }: { onClose?: () => void }) {
                     borderRadius: 'var(--radius-md)',
                     fontWeight: 600,
                     cursor: 'pointer',
-                    marginTop: '1rem'
+                    marginTop: '0.5rem',
+                    fontSize: '1rem',
+                    transition: 'all 0.2s'
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
-                Guardar Transacción
+                {editingTransaction ? '💾 Actualizar Transacción' : '➕ Guardar Transacción'}
             </button>
         </form>
     );

@@ -25,9 +25,11 @@ interface StorageContextType {
     budgets: Budget[];
     recurring: RecurringTransaction[];
     addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
+    updateTransaction: (id: string, transaction: Partial<Transaction>) => void;
     deleteTransaction: (id: string) => void;
     addAccount: (account: Account) => void;
     updateAccount: (account: Account) => void;
+    deleteAccount: (id: string) => void;
     getAccountBalance: (accountId: string) => number;
     addRecurring: (recurringTx: Omit<RecurringTransaction, 'id' | 'nextRunDate'>) => void;
     deleteRecurring: (id: string) => void;
@@ -151,6 +153,11 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
         });
     };
 
+    const updateTransaction = async (id: string, transaction: Partial<Transaction>) => {
+        if (!user) return;
+        await updateDoc(doc(db, 'users/' + user.uid + '/transactions', id), transaction as any);
+    };
+
     const deleteTransaction = async (id: string) => {
         if (!user) return;
         await deleteDoc(doc(db, 'users/' + user.uid + '/transactions', id));
@@ -165,6 +172,11 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
         if (!user) return;
         const { id, ...data } = updatedAccount;
         await updateDoc(doc(db, 'users/' + user.uid + '/accounts', id), data as any);
+    };
+
+    const deleteAccount = async (id: string) => {
+        if (!user) return;
+        await deleteDoc(doc(db, 'users/' + user.uid + '/accounts', id));
     };
 
     const addRecurring = async (recurringTx: Omit<RecurringTransaction, 'id' | 'nextRunDate'>) => {
@@ -213,9 +225,11 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
             budgets,
             recurring,
             addTransaction,
+            updateTransaction,
             deleteTransaction,
             addAccount,
             updateAccount,
+            deleteAccount,
             getAccountBalance,
             addRecurring,
             deleteRecurring,
