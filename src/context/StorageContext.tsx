@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Account, Category, Transaction, Budget, RecurringTransaction } from '@/types';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { Account, Category, Transaction, Budget, RecurringTransaction, Household, UserProfile } from '@/types';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import {
@@ -13,12 +13,17 @@ import {
     doc,
     updateDoc,
     setDoc,
-    getDocs
+    getDoc,
+    getDocs,
+    where
 } from 'firebase/firestore';
 import LoginPageNew from '@/components/LoginPageNew';
+import HouseholdSetup from '@/components/HouseholdSetup';
 
 interface StorageContextType {
     user: User | null;
+    userProfile: UserProfile | null;
+    household: Household | null;
     accounts: Account[];
     categories: Category[];
     transactions: Transaction[];
@@ -33,7 +38,10 @@ interface StorageContextType {
     getAccountBalance: (accountId: string) => number;
     addRecurring: (recurringTx: Omit<RecurringTransaction, 'id' | 'nextRunDate'>) => void;
     deleteRecurring: (id: string) => void;
+    createHousehold: (name: string) => Promise<string>;
+    joinHousehold: (inviteCode: string) => Promise<boolean>;
     loading: boolean;
+    needsHousehold: boolean;
 }
 
 const StorageContext = createContext<StorageContextType | undefined>(undefined);
@@ -67,38 +75,97 @@ const INITIAL_ACCOUNTS: Account[] = [
     },
 ];
 
+// Generate a random invite code
+function generateInviteCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+}
+
 export function StorageProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+    const [household, setHousehold] = useState<Household | null>(null);
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
     const [loading, setLoading] = useState(true);
+    const [needsHousehold, setNeedsHousehold] = useState(false);
 
     // 1. Auth Listener
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
             if (!currentUser) {
                 setLoading(false);
+                setUserProfile(null);
+                setHousehold(null);
                 setAccounts([]);
                 setCategories([]);
                 setTransactions([]);
                 setRecurring([]);
+                setNeedsHousehold(false);
             }
         });
         return () => unsubscribe();
     }, []);
 
-    // 2. Data Sync (Only when logged in)
+    // 2. Load/Create User Profile
     useEffect(() => {
         if (!user) return;
+
+        const loadUserProfile = async () => {
+            setLoading(true);
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDoc = await getDoc(userDocRef);
+
+            if (userDoc.exists()) {
+                const profile = { id: userDoc.id, ...userDoc.data() } as UserProfile;
+                setUserProfile(profile);
+
+                if (profile.householdId) {
+                    // Load household
+                    const householdDoc = await getDoc(doc(db, 'households', profile.householdId));
+                    if (householdDoc.exists()) {
+                        setHousehold({ id: householdDoc.id, ...householdDoc.data() } as Household);
+                        setNeedsHousehold(false);
+                    } else {
+                        setNeedsHousehold(true);
+                    }
+                } else {
+                    setNeedsHousehold(true);
+                }
+            } else {
+                // Create new user profile
+                const newProfile: Omit<UserProfile, 'id'> = {
+                    email: user.email || '',
+                    displayName: user.displayName || '',
+                    householdId: null,
+                    createdAt: new Date().toISOString()
+                };
+                await setDoc(userDocRef, newProfile);
+                setUserProfile({ id: user.uid, ...newProfile });
+                setNeedsHousehold(true);
+            }
+            setLoading(false);
+        };
+
+        loadUserProfile();
+    }, [user]);
+
+    // 3. Data Sync (Only when household exists)
+    useEffect(() => {
+        if (!user || !household) return;
 
         setLoading(true);
 
         const subscribeToCollection = (collectionName: string, setter: React.Dispatch<React.SetStateAction<any[]>>) => {
-            const q = query(collection(db, 'users/' + user.uid + '/' + collectionName));
+            const q = query(collection(db, 'households/' + household.id + '/' + collectionName));
             return onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setter(data);
@@ -118,78 +185,132 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
             unsubTransactions();
             unsubRecurring();
         };
-    }, [user]);
+    }, [user, household]);
 
-    // 3. Initial Population (If empty)
+    // 4. Initial Population (If empty household)
     useEffect(() => {
-        if (!user || loading) return;
+        if (!user || !household || loading) return;
 
         const seedData = async () => {
-            // Check if data actually exists in DB to avoid overwriting on initial load delay
-            const catsSnapshot = await getDocs(collection(db, 'users/' + user.uid + '/categories'));
-            const accsSnapshot = await getDocs(collection(db, 'users/' + user.uid + '/accounts'));
+            const catsSnapshot = await getDocs(collection(db, 'households/' + household.id + '/categories'));
+            const accsSnapshot = await getDocs(collection(db, 'households/' + household.id + '/accounts'));
 
             if (catsSnapshot.empty && accsSnapshot.empty) {
-                // Seed Categories
                 for (const cat of INITIAL_CATEGORIES) {
-                    await setDoc(doc(db, 'users/' + user.uid + '/categories', cat.id), cat);
+                    await setDoc(doc(db, 'households/' + household.id + '/categories', cat.id), cat);
                 }
-                // Seed Accounts
                 for (const acc of INITIAL_ACCOUNTS) {
-                    await setDoc(doc(db, 'users/' + user.uid + '/accounts', acc.id), acc);
+                    await setDoc(doc(db, 'households/' + household.id + '/accounts', acc.id), acc);
                 }
             }
         };
 
         seedData();
-    }, [user, loading]);
+    }, [user, household, loading]);
+
+    // Create a new household
+    const createHousehold = useCallback(async (name: string): Promise<string> => {
+        if (!user) throw new Error('No user');
+
+        const inviteCode = generateInviteCode();
+        const newHousehold: Omit<Household, 'id'> = {
+            name,
+            inviteCode,
+            members: [user.uid],
+            createdBy: user.uid,
+            createdAt: new Date().toISOString()
+        };
+
+        const householdRef = await addDoc(collection(db, 'households'), newHousehold);
+
+        // Update user profile with household ID
+        await updateDoc(doc(db, 'users', user.uid), { householdId: householdRef.id });
+
+        const createdHousehold = { id: householdRef.id, ...newHousehold };
+        setHousehold(createdHousehold);
+        setUserProfile(prev => prev ? { ...prev, householdId: householdRef.id } : null);
+        setNeedsHousehold(false);
+
+        return inviteCode;
+    }, [user]);
+
+    // Join existing household with invite code
+    const joinHousehold = useCallback(async (inviteCode: string): Promise<boolean> => {
+        if (!user) throw new Error('No user');
+
+        const householdsQuery = query(
+            collection(db, 'households'),
+            where('inviteCode', '==', inviteCode.toUpperCase())
+        );
+        const snapshot = await getDocs(householdsQuery);
+
+        if (snapshot.empty) {
+            return false;
+        }
+
+        const householdDoc = snapshot.docs[0];
+        const householdData = householdDoc.data() as Omit<Household, 'id'>;
+
+        // Add user to household members
+        const updatedMembers = [...householdData.members, user.uid];
+        await updateDoc(doc(db, 'households', householdDoc.id), { members: updatedMembers });
+
+        // Update user profile
+        await updateDoc(doc(db, 'users', user.uid), { householdId: householdDoc.id });
+
+        setHousehold({ id: householdDoc.id, ...householdData, members: updatedMembers });
+        setUserProfile(prev => prev ? { ...prev, householdId: householdDoc.id } : null);
+        setNeedsHousehold(false);
+
+        return true;
+    }, [user]);
 
     // Actions
     const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
-        if (!user) return;
-        await addDoc(collection(db, 'users/' + user.uid + '/transactions'), {
+        if (!user || !household) return;
+        await addDoc(collection(db, 'households/' + household.id + '/transactions'), {
             ...transaction,
             date: transaction.date
         });
     };
 
     const updateTransaction = async (id: string, transaction: Partial<Transaction>) => {
-        if (!user) return;
-        await updateDoc(doc(db, 'users/' + user.uid + '/transactions', id), transaction as any);
+        if (!user || !household) return;
+        await updateDoc(doc(db, 'households/' + household.id + '/transactions', id), transaction as any);
     };
 
     const deleteTransaction = async (id: string) => {
-        if (!user) return;
-        await deleteDoc(doc(db, 'users/' + user.uid + '/transactions', id));
+        if (!user || !household) return;
+        await deleteDoc(doc(db, 'households/' + household.id + '/transactions', id));
     };
 
     const addAccount = async (account: Account) => {
-        if (!user) return;
-        await addDoc(collection(db, 'users/' + user.uid + '/accounts'), account);
+        if (!user || !household) return;
+        await addDoc(collection(db, 'households/' + household.id + '/accounts'), account);
     };
 
     const updateAccount = async (updatedAccount: Account) => {
-        if (!user) return;
+        if (!user || !household) return;
         const { id, ...data } = updatedAccount;
-        await updateDoc(doc(db, 'users/' + user.uid + '/accounts', id), data as any);
+        await updateDoc(doc(db, 'households/' + household.id + '/accounts', id), data as any);
     };
 
     const deleteAccount = async (id: string) => {
-        if (!user) return;
-        await deleteDoc(doc(db, 'users/' + user.uid + '/accounts', id));
+        if (!user || !household) return;
+        await deleteDoc(doc(db, 'households/' + household.id + '/accounts', id));
     };
 
     const addRecurring = async (recurringTx: Omit<RecurringTransaction, 'id' | 'nextRunDate'>) => {
-        if (!user) return;
-        await addDoc(collection(db, 'users/' + user.uid + '/recurring'), {
+        if (!user || !household) return;
+        await addDoc(collection(db, 'households/' + household.id + '/recurring'), {
             ...recurringTx,
             nextRunDate: recurringTx.startDate
         });
     };
 
     const deleteRecurring = async (id: string) => {
-        if (!user) return;
-        await deleteDoc(doc(db, 'users/' + user.uid + '/recurring', id));
+        if (!user || !household) return;
+        await deleteDoc(doc(db, 'households/' + household.id + '/recurring', id));
     };
 
     const getAccountBalance = (accountId: string) => {
@@ -216,9 +337,41 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
         return <LoginPageNew />;
     }
 
+    if (needsHousehold && !loading) {
+        return (
+            <StorageContext.Provider value={{
+                user,
+                userProfile,
+                household,
+                accounts,
+                categories,
+                transactions,
+                budgets,
+                recurring,
+                addTransaction,
+                updateTransaction,
+                deleteTransaction,
+                addAccount,
+                updateAccount,
+                deleteAccount,
+                getAccountBalance,
+                addRecurring,
+                deleteRecurring,
+                createHousehold,
+                joinHousehold,
+                loading,
+                needsHousehold
+            }}>
+                <HouseholdSetup />
+            </StorageContext.Provider>
+        );
+    }
+
     return (
         <StorageContext.Provider value={{
             user,
+            userProfile,
+            household,
             accounts,
             categories,
             transactions,
@@ -233,7 +386,10 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
             getAccountBalance,
             addRecurring,
             deleteRecurring,
-            loading
+            createHousehold,
+            joinHousehold,
+            loading,
+            needsHousehold
         }}>
             {children}
         </StorageContext.Provider>

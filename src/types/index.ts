@@ -53,3 +53,20 @@ export interface RecurringTransaction {
     nextRunDate: string;
     active: boolean;
 }
+
+export interface Household {
+    id: string;
+    name: string;
+    inviteCode: string;
+    members: string[]; // Array of user UIDs
+    createdBy: string;
+    createdAt: string;
+}
+
+export interface UserProfile {
+    id: string; // Same as Firebase UID
+    email: string;
+    displayName: string;
+    householdId: string | null;
+    createdAt: string;
+}
