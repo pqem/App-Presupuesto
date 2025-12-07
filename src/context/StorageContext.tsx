@@ -15,7 +15,7 @@ import {
     setDoc,
     getDocs
 } from 'firebase/firestore';
-import LoginPage from '@/components/LoginPage';
+import LoginPageNew from '@/components/LoginPageNew';
 
 interface StorageContextType {
     user: User | null;
@@ -213,7 +213,7 @@ export function StorageProvider({ children }: { children: React.ReactNode }) {
     };
 
     if (!user) {
-        return <LoginPage />;
+        return <LoginPageNew />;
     }
 
     return (
