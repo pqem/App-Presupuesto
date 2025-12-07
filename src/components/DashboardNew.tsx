@@ -12,11 +12,11 @@ export default function DashboardNew() {
     const totalIncome = transactions
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + t.amount, 0);
-    
+
     const totalExpense = transactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + t.amount, 0);
-    
+
     const balance = totalIncome - totalExpense;
     const percentage = totalIncome > 0 ? Math.round((totalExpense / totalIncome) * 100) : 0;
 
@@ -26,11 +26,11 @@ export default function DashboardNew() {
   // Agrupar transacciones por categoría
   const categoryExpenses = useMemo(() => {
     const groups: { [key: string]: number } = {};
-    
+
     transactions
       .filter(t => t.type === 'expense')
       .forEach(t => {
-        const category = t.category || 'Sin categoría';
+        const category = t.categoryId || 'Sin categoría';
         groups[category] = (groups[category] || 0) + t.amount;
       });
 
@@ -78,7 +78,7 @@ export default function DashboardNew() {
           backdropFilter: 'blur(10px)',
           border: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
-          
+
           <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Presupuesto Total</p>
           <h2 style={{ color: 'white', fontSize: '3rem', fontWeight: 'bold', marginBottom: '1.5rem', margin: 0 }}>
             {formatCurrency(stats.balance)}
@@ -167,7 +167,7 @@ export default function DashboardNew() {
         <h3 style={{ color: 'white', fontSize: '1.125rem', fontWeight: 'bold', marginBottom: '1rem' }}>
           Mis Presupuestos
         </h3>
-        
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {categoryExpenses.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
@@ -179,7 +179,7 @@ export default function DashboardNew() {
               const icons = ['🍽️', '🏠', '🚗'];
               const colors = ['#10b981', '#f59e0b', '#ef4444'];
               const used = Math.min(Math.round((cat.amount / stats.totalExpense) * 100), 100);
-              
+
               return (
                 <div key={cat.name} style={{
                   borderRadius: '1rem',

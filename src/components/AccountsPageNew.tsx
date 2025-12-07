@@ -23,9 +23,9 @@ export default function AccountsPageNew() {
       type: newAccountType,
       initialBalance: parseFloat(newAccountBalance),
       currentBalance: parseFloat(newAccountBalance),
-      balance: parseFloat(newAccountBalance),
-      currency: 'USD'
-    } as any);
+      currency: 'USD',
+      color: '#8b5cf6'
+    });
 
     setNewAccountName('');
     setNewAccountBalance('');
@@ -86,7 +86,7 @@ export default function AccountsPageNew() {
                   {acc.name}
                 </h3>
                 <p style={{ color: 'white', fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
-                  {formatCurrency(acc.balance || acc.currentBalance || 0)}
+                  {formatCurrency(acc.currentBalance || 0)}
                 </p>
               </div>
               <button
@@ -135,7 +135,7 @@ export default function AccountsPageNew() {
                   {acc.name}
                 </h3>
                 <p style={{ color: 'white', fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
-                  {formatCurrency(acc.balance || acc.currentBalance || 0)}
+                  {formatCurrency(acc.currentBalance || 0)}
                 </p>
               </div>
               <button
@@ -168,9 +168,9 @@ export default function AccountsPageNew() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {creditAccounts.map(acc => {
               const limit = acc.limit || 500000;
-              const currentBalance = acc.balance || acc.currentBalance || 0;
+              const currentBalance = acc.currentBalance || 0;
               const available = limit - Math.abs(currentBalance);
-              
+
               return (
                 <div key={acc.id} style={{
                   borderRadius: '1rem',
@@ -199,11 +199,11 @@ export default function AccountsPageNew() {
                       🗑️
                     </button>
                   </div>
-                  
+
                   <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
                     Cierra el 25/12/2025
                   </p>
-                  
+
                   <div style={{ marginBottom: '0.75rem' }}>
                     <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
                       Deuda Actual
@@ -262,7 +262,7 @@ export default function AccountsPageNew() {
           justifyContent: 'center',
           padding: '1rem'
         }}
-        onClick={() => setShowAddModal(false)}>
+          onClick={() => setShowAddModal(false)}>
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
@@ -272,7 +272,7 @@ export default function AccountsPageNew() {
               padding: '1.5rem',
               background: '#1e293b'
             }}>
-            
+
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
               <h2 style={{ color: 'white', fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>
                 Nueva Cuenta

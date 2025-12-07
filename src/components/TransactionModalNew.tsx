@@ -8,7 +8,7 @@ import { Transaction } from '@/types';
 export default function TransactionModalNew() {
   const { accounts, addTransaction, updateTransaction } = useStorage();
   const { isTransactionModalOpen, closeTransactionModal, transactionToEdit } = useUi();
-  
+
   const [type, setType] = useState<'expense' | 'income' | 'transfer'>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -23,7 +23,7 @@ export default function TransactionModalNew() {
       setAmount(transactionToEdit.amount.toString());
       setDescription(transactionToEdit.description);
       setAccountId(transactionToEdit.accountId);
-      setCategory(transactionToEdit.category || '');
+      setCategory(transactionToEdit.categoryId || '');
       setDate(transactionToEdit.date);
     } else {
       setType('expense');
@@ -46,7 +46,7 @@ export default function TransactionModalNew() {
       amount: parseFloat(amount),
       description,
       accountId,
-      category: category || undefined,
+      categoryId: category || undefined,
       date
     };
 
@@ -73,7 +73,7 @@ export default function TransactionModalNew() {
       justifyContent: 'center',
       padding: '1rem'
     }}
-    onClick={closeTransactionModal}>
+      onClick={closeTransactionModal}>
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -88,7 +88,7 @@ export default function TransactionModalNew() {
           maxHeight: '90vh',
           overflowY: 'auto'
         }}>
-        
+
         {/* Header */}
         <div style={{
           padding: '1.5rem',
@@ -120,7 +120,7 @@ export default function TransactionModalNew() {
 
         {/* Contenido */}
         <div style={{ padding: '1.5rem' }}>
-          
+
           {/* Tipo de transacción */}
           <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
             <button
