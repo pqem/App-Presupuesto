@@ -48,7 +48,7 @@ export default function DashboardNew() {
           <div style={{ fontSize: '2rem' }}>📱</div>
           <div>
             <h1 style={{ color: 'white', fontSize: '1.25rem', fontWeight: 'bold', margin: 0 }}>Presupuesto</h1>
-            <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: 0 }}>Panel Principal</p>
+            <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: 0 }}>Panel Principal - v2.0 NUEVO</p>
           </div>
         </div>
         {user && (
