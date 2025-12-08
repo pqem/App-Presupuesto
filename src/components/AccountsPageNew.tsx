@@ -66,7 +66,6 @@ export default function AccountsPageNew() {
           color: '#9ca3af', 
           fontSize: '0.875rem', 
           fontWeight: 600, 
-          marginBottom: '0.75rem',
           margin: 0,
           marginBottom: '12px'
         }}>
