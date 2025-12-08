@@ -44,7 +44,7 @@ interface StorageContextType {
     needsHousehold: boolean;
 }
 
-const StorageContext = createContext<StorageContextType | undefined>(undefined);
+export const StorageContext = createContext<StorageContextType | undefined>(undefined);
 
 // Initial Data Seeding
 const INITIAL_CATEGORIES: Category[] = [

@@ -1,12 +1,10 @@
 "use client";
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useUi } from '@/context/UiContext';
 
 export default function BottomNavigation() {
   const router = useRouter();
   const pathname = usePathname();
-  const { openTransactionModal } = useUi();
 
   const isActive = (path: string) => pathname === path;
 
@@ -72,28 +70,6 @@ export default function BottomNavigation() {
           }}>
           <span style={{ fontSize: '1.5rem' }}>📝</span>
           <span style={{ fontSize: '10px', fontWeight: 500 }}>Historial</span>
-        </button>
-
-        {/* Botón Central + */}
-        <button
-          onClick={openTransactionModal}
-          style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '2rem',
-            fontWeight: 'bold',
-            marginTop: '-32px',
-            border: '4px solid #1e293b',
-            background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
-            boxShadow: '0 8px 24px rgba(139, 92, 246, 0.4)',
-            cursor: 'pointer'
-          }}>
-          +
         </button>
 
         {/* Cuentas */}

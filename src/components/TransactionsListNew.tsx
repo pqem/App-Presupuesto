@@ -37,17 +37,28 @@ export default function TransactionsListNew() {
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '96px', background: '#0f172a' }}>
-      {/* Header */}
+      {/* HEADER - DISEÑO MAGICPATH */}
       <div style={{ padding: '1.5rem' }}>
-        <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.25rem', margin: 0 }}>
+        <h1 style={{ 
+          color: 'white', 
+          fontSize: '1.5rem', 
+          fontWeight: 'bold', 
+          marginBottom: '0.25rem', 
+          margin: 0,
+          marginBottom: '4px'
+        }}>
           Transacciones
         </h1>
-        <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: 0 }}>
+        <p style={{ 
+          color: '#9ca3af', 
+          fontSize: '0.875rem', 
+          margin: 0 
+        }}>
           {filteredTransactions.length} transacciones totales
         </p>
       </div>
 
-      {/* Barra de búsqueda */}
+      {/* BARRA DE BÚSQUEDA - DISEÑO MAGICPATH */}
       <div style={{ padding: '0 1.5rem', marginBottom: '1rem' }}>
         <div style={{ position: 'relative' }}>
           <span style={{
@@ -56,7 +67,8 @@ export default function TransactionsListNew() {
             top: '50%',
             transform: 'translateY(-50%)',
             color: '#9ca3af',
-            fontSize: '1.25rem'
+            fontSize: '1.25rem',
+            pointerEvents: 'none'
           }}>
             🔍
           </span>
@@ -70,18 +82,25 @@ export default function TransactionsListNew() {
               height: '48px',
               paddingLeft: '3rem',
               paddingRight: '1rem',
-              borderRadius: '0.75rem',
+              borderRadius: '12px',
               color: 'white',
               background: '#1e293b',
               border: '1px solid rgba(255, 255, 255, 0.1)',
-              fontSize: '1rem'
+              fontSize: '1rem',
+              outline: 'none'
             }}
           />
         </div>
       </div>
 
-      {/* Filtros */}
-      <div style={{ padding: '0 1.5rem', marginBottom: '1.5rem', display: 'flex', gap: '0.75rem' }}>
+      {/* FILTROS - DISEÑO MAGICPATH */}
+      <div style={{ 
+        padding: '0 1.5rem', 
+        marginBottom: '1.5rem',
+        display: 'flex',
+        gap: '0.75rem'
+      }}>
+        {/* Filtro 1: Tipo */}
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value as any)}
@@ -89,17 +108,21 @@ export default function TransactionsListNew() {
             flex: 1,
             height: '44px',
             padding: '0 1rem',
-            borderRadius: '0.75rem',
+            borderRadius: '12px',
             color: 'white',
-            fontSize: '0.875rem',
             background: '#1e293b',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
-          }}>
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            fontSize: '0.875rem',
+            cursor: 'pointer',
+            outline: 'none'
+          }}
+        >
           <option value="all">Todos los tipos</option>
           <option value="income">Ingresos</option>
           <option value="expense">Gastos</option>
         </select>
 
+        {/* Filtro 2: Cuenta */}
         <select
           value={filterAccount}
           onChange={(e) => setFilterAccount(e.target.value)}
@@ -107,12 +130,15 @@ export default function TransactionsListNew() {
             flex: 1,
             height: '44px',
             padding: '0 1rem',
-            borderRadius: '0.75rem',
+            borderRadius: '12px',
             color: 'white',
-            fontSize: '0.875rem',
             background: '#1e293b',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
-          }}>
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            fontSize: '0.875rem',
+            cursor: 'pointer',
+            outline: 'none'
+          }}
+        >
           <option value="all">Todas las cuentas</option>
           {accounts.map(acc => (
             <option key={acc.id} value={acc.id}>{acc.name}</option>
@@ -120,105 +146,149 @@ export default function TransactionsListNew() {
         </select>
       </div>
 
-      {/* Lista */}
+      {/* LISTA DE TRANSACCIONES - DISEÑO EXACTO MAGICPATH */}
       <div style={{ padding: '0 1.5rem' }}>
         {filteredTransactions.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem 0' }}>
-            <p style={{ color: '#9ca3af', fontSize: '1.125rem', marginBottom: '0.5rem' }}>No hay transacciones</p>
-            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>Usa el botón + para agregar una</p>
+          /* ESTADO VACÍO - DISEÑO MAGICPATH */
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '3rem 1rem',
+            color: '#6b7280'
+          }}>
+            <p style={{ fontSize: '3rem', marginBottom: '1rem', margin: 0 }}>📭</p>
+            <p style={{ margin: 0, marginBottom: '0.5rem', fontSize: '1.125rem', fontWeight: '600' }}>
+              No hay transacciones
+            </p>
+            <p style={{ margin: 0, fontSize: '0.875rem' }}>
+              Presiona + para agregar
+            </p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {filteredTransactions.map(t => {
-              const account = accounts.find(a => a.id === t.accountId);
+            {filteredTransactions.map((transaction) => {
+              const account = accounts.find(a => a.id === transaction.accountId);
+              const isIncome = transaction.type === 'income';
               
               return (
-                <div key={t.id} style={{
-                  borderRadius: '1rem',
-                  padding: '1rem',
-                  background: 'rgba(30, 41, 59, 0.6)',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)'
-                }}>
-                  
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                    {/* Icono */}
+                <div 
+                  key={transaction.id} 
+                  style={{
+                    borderRadius: '1rem',
+                    padding: '1rem',
+                    background: 'rgba(30, 41, 59, 0.6)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}
+                >
+                  {/* CONTENIDO PRINCIPAL DE LA TARJETA */}
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '1rem',
+                    marginBottom: '0.75rem'
+                  }}>
+                    
+                    {/* CÍRCULO ICONO - DISEÑO MAGICPATH (48px) */}
                     <div style={{
-                      width: '40px',
-                      height: '40px',
+                      width: '48px',
+                      height: '48px',
                       borderRadius: '50%',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '1.125rem',
-                      backgroundColor: t.type === 'income' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                      color: t.type === 'income' ? '#34d399' : '#f87171'
+                      fontSize: '1.5rem',
+                      fontWeight: 'bold',
+                      flexShrink: 0,
+                      // Verde para ingresos, Rojo para gastos
+                      background: isIncome ? '#10b981' : '#ef4444',
+                      color: 'white'
                     }}>
-                      {t.type === 'income' ? '↓' : '↑'}
+                      {isIncome ? '↓' : '↑'}
                     </div>
 
-                    {/* Detalles */}
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ color: 'white', fontWeight: 600, fontSize: '1rem', margin: 0, marginBottom: '0.125rem' }}>
-                        {t.description}
-                      </h3>
-                      <p style={{ color: '#9ca3af', fontSize: '0.75rem', margin: 0 }}>
-                        {formatDate(t.date)} • {account?.name || 'Sin cuenta'}
-                      </p>
-                    </div>
-
-                    {/* Monto */}
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{
-                        fontSize: '1.25rem',
+                    {/* INFO CENTRO */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {/* Descripción - blanco, bold */}
+                      <p style={{ 
+                        color: 'white', 
                         fontWeight: 'bold',
                         margin: 0,
-                        color: t.type === 'income' ? '#34d399' : 'white'
+                        marginBottom: '4px',
+                        fontSize: '1rem'
                       }}>
-                        {t.type === 'income' ? '+' : ''}{formatCurrency(t.amount)}
+                        {transaction.description}
                       </p>
+                      
+                      {/* Fecha + Cuenta - gris, pequeño */}
+                      <p style={{ 
+                        color: '#9ca3af', 
+                        fontSize: '0.875rem',
+                        margin: 0
+                      }}>
+                        {formatDate(transaction.date)} • {account?.name || 'Sin cuenta'}
+                      </p>
+                    </div>
+
+                    {/* MONTO DERECHA - grande, bold */}
+                    <div style={{ 
+                      color: isIncome ? '#10b981' : 'white',
+                      fontSize: '1.125rem',
+                      fontWeight: 'bold',
+                      flexShrink: 0
+                    }}>
+                      {isIncome ? '+' : ''}{formatCurrency(transaction.amount)}
                     </div>
                   </div>
 
-                  {/* Botones */}
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {/* DOS BOTONES - DISEÑO MAGICPATH */}
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '8px'
+                  }}>
+                    {/* Botón EDITAR - Azul #3b82f6 */}
                     <button
-                      onClick={() => handleEdit(t)}
+                      onClick={() => handleEdit(transaction)}
                       style={{
                         flex: 1,
                         height: '44px',
                         borderRadius: '0.75rem',
-                        fontWeight: 500,
-                        color: 'white',
+                        fontWeight: 600,
                         fontSize: '0.875rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
+                        color: 'white',
                         background: '#3b82f6',
                         border: 'none',
-                        cursor: 'pointer'
-                      }}>
-                      ✏️ Editar
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem'
+                      }}
+                    >
+                      <span>✏️</span>
+                      <span>Editar</span>
                     </button>
+
+                    {/* Botón ELIMINAR - Rojo #ef4444 */}
                     <button
-                      onClick={() => handleDelete(t.id)}
+                      onClick={() => handleDelete(transaction.id)}
                       style={{
                         flex: 1,
                         height: '44px',
                         borderRadius: '0.75rem',
-                        fontWeight: 500,
-                        color: 'white',
+                        fontWeight: 600,
                         fontSize: '0.875rem',
+                        color: 'white',
+                        background: '#ef4444',
+                        border: 'none',
+                        cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '0.5rem',
-                        background: '#ef4444',
-                        border: 'none',
-                        cursor: 'pointer'
-                      }}>
-                      🗑️ Eliminar
+                        gap: '0.5rem'
+                      }}
+                    >
+                      <span>🗑️</span>
+                      <span>Eliminar</span>
                     </button>
                   </div>
                 </div>

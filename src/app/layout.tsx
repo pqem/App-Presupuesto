@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { StorageProvider } from "@/context/StorageContext";
 import { UiProvider } from "@/context/UiContext";
+import SwipeNavigation from "@/components/SwipeNavigation";
+import FloatingActionButton from "@/components/FloatingActionButton";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -40,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -50,7 +52,10 @@ export default function RootLayout({
       <body style={{ margin: 0, padding: 0 }}>
         <StorageProvider>
           <UiProvider>
-            {children}
+            <SwipeNavigation>
+              {children}
+            </SwipeNavigation>
+            <FloatingActionButton />
           </UiProvider>
         </StorageProvider>
       </body>
