@@ -391,7 +391,6 @@ export default function AccountsPageNew() {
               color: 'white', 
               fontSize: '1.25rem', 
               fontWeight: 'bold', 
-              marginBottom: '1.5rem',
               margin: 0,
               marginBottom: '24px'
             }}>
