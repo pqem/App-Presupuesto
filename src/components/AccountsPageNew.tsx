@@ -26,7 +26,7 @@ export default function AccountsPageNew() {
       currentBalance: parseFloat(newAccountBalance),
       currency: 'USD',
       color: '#8b5cf6',
-      creditLimit: newAccountType === 'credit' ? parseFloat(newCreditLimit || '0') : undefined
+      limit: newAccountType === 'credit' ? parseFloat(newCreditLimit || '0') : undefined
     });
 
     setNewAccountName('');
